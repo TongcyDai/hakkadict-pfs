@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Hakka Romanization Converter (HPF ⇄ PFS)
 // @namespace    hakka-romanization
-// @version      1.0.0
+// @version      1.0.1
 // @description  Display Si-yen Hakka Dictionary entries in Pha̍k-fa-sṳ!
 // @author       TongcyDai
 // @match        http*://hakkadict.moe.edu.tw/*
@@ -401,7 +401,7 @@
         return leadingSpace + result.normalize('NFC');
     }
 
-    // Apply PFS transformation to text
+    // Convert text from Hakka Pinyin to PFS
     function applyPFSTransformation(node) {
         if (node.nodeType === Node.TEXT_NODE) {
             let text = node.nodeValue;
@@ -421,8 +421,31 @@
                 // Check if parent is a Si-yen or Nam-si-yen dialect tab
                 const isTargetDialect = isInSiyenOrNamSiyenTab(node);
 
+                // Handle special symbols for Hailu dialect (2)
+                if (dataType === 'contour' && (accentId === '2' || isInHailuTab(node))) {
+                    // Store original HTML
+                    if (!originalTextMap.has(node)) {
+                        originalTextMap.set(node, node.innerHTML);
+                    }
+
+                    // Process all sup elements
+                    const supElements = node.querySelectorAll('sup');
+                    for (let i = 0; i < supElements.length; i++) {
+                        const sup = supElements[i];
+
+                        // Store original content
+                        if (!originalTextMap.has(sup)) {
+                            originalTextMap.set(sup, sup.innerHTML);
+                        }
+
+                        // Replace + with ˖
+                        if (sup.textContent === '+') {
+                            sup.textContent = '˖';
+                        }
+                    }
+                }
                 // Only convert 'contour' type for Si-yen(1) and Nam-si-yen(6)
-                if (dataType === 'contour' &&
+                else if (dataType === 'contour' && 
                     (accentId === '1' || accentId === '6' || (isTargetDialect && !accentId))) {
 
                     // Store original HTML
@@ -619,6 +642,23 @@
                 // Check ID, item1 is Si-yen, item6 is Nam-si-yen
                 const id = current.id;
                 return id === 'item1' || id === 'item6';
+            }
+            current = current.parentNode;
+        }
+
+        return false;
+    }
+
+    // Determine if element is in Hailu tab
+    function isInHailuTab(node) {
+        let current = node;
+
+        // Look upward for tab-pane element
+        while (current && current !== document.body) {
+            if (current.classList && current.classList.contains('tab-pane')) {
+                // Check ID, item2 is Hailu
+                const id = current.id;
+                return id === 'item2';
             }
             current = current.parentNode;
         }
