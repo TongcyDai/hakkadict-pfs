@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Hakka Romanization Converter (HPF ⇄ PFS)
 // @namespace    hakka-romanization
-// @version      1.1.0
+// @version      1.1.1
 // @description  Display Si-yen Hakka Dictionary entries in Pha̍k-fa-sṳ!
 // @author       TongcyDai
 // @match        http*://hakkadict.moe.edu.tw/*
@@ -61,7 +61,7 @@
 
         const button = document.getElementById('pfs-toggle-btn');
         if (button) {
-            button.textContent = usePFS ? 'Use HPF' : 'Use PFS';
+            button.textContent = usePFS ? '用拼音 (HPF)' : '用白話字 (PFS)';
         }
 
         if (usePFS) {
