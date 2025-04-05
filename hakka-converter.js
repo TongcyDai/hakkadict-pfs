@@ -1,12 +1,14 @@
 // ==UserScript==
 // @name         Hakka Romanization Converter (HPF ⇄ PFS)
 // @namespace    hakka-romanization
-// @version      1.0.1
+// @version      1.1.0
 // @description  Display Si-yen Hakka Dictionary entries in Pha̍k-fa-sṳ!
 // @author       TongcyDai
 // @match        http*://hakkadict.moe.edu.tw/*
 // @grant        none
 // @license      GNU GPLv3
+// @downloadURL https://update.greasyfork.org/scripts/531865/Hakka%20Romanization%20Converter%20%28HPF%20%E2%87%84%20PFS%29.user.js
+// @updateURL https://update.greasyfork.org/scripts/531865/Hakka%20Romanization%20Converter%20%28HPF%20%E2%87%84%20PFS%29.meta.js
 // ==/UserScript==
 
 (function() {
@@ -35,6 +37,7 @@
         button.style.cursor = 'pointer';
         button.style.fontWeight = 'bold';
         button.style.boxShadow = '0 2px 5px rgba(0,0,0,0.2)';
+        button.style.fontFamily = "'Microsoft JhengHei', 'Heiti TC', 'Heiti SC', 'STHeiti', 'WenQuanYi Zen Hei', sans-serif";
 
         // Mouse hover effect
         button.addEventListener('mouseover', function() {
@@ -448,6 +451,8 @@
                 else if (dataType === 'contour' && 
                     (accentId === '1' || accentId === '6' || (isTargetDialect && !accentId))) {
 
+                    node.classList.add('pfs-converted');
+
                     // Store original HTML
                     if (!originalTextMap.has(node)) {
                         originalTextMap.set(node, node.innerHTML);
@@ -674,6 +679,8 @@
             }
         } else if (node.nodeType === Node.ELEMENT_NODE) {
             if (node.classList && node.classList.contains('accent-data')) {
+                node.classList.remove('pfs-converted');
+
                 // If entire element HTML is stored, use it first
                 if (originalTextMap.has(node)) {
                     node.innerHTML = originalTextMap.get(node);
@@ -739,9 +746,30 @@
         observer.observe(document.body, { childList: true, subtree: true });
     }
 
+    function setupDiacriticFontSupport() {
+        const style = document.createElement('style');
+        style.id = 'pfs-font-style';
+        style.textContent = `
+        /* Target only the romanization text, not the hanzi */
+        .accent-data.pfs-converted > span:not(:first-child),
+        .accent-data.pfs-converted > :not(span):not(.han-char) {
+            font-family: 'Gentium Plus', 'Doulos SIL', 'Charis SIL', 'Noto Sans', 'DejaVu Sans', 'Lucida Sans Unicode', sans-serif !important;
+            letter-spacing: 0.5px;
+        }
+
+        /* Make sure hanzi characters keep their original font */
+        .accent-data.pfs-converted .han-char,
+        .accent-data.pfs-converted > span:first-child {
+            font-family: inherit;
+        }
+    `;
+        document.head.appendChild(style);
+    }
+
     // Initialize on page load
     window.addEventListener('load', function() {
         createToggleButton();
+        setupDiacriticFontSupport();
         setupMutationObserver();
 
         // Decide initial display based on user's choice
